@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   catalogdb:
     image: postgres:15
@@ -10,13 +12,48 @@ services:
       - "5432:5432"
     volumes:
       - postgres_catalog:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d CatalogDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  basketdb:
+    image: postgres:15
+    container_name: basketdb
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=BasketDb
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_basket:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d BasketDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   catalog.api:
     image: ${DOCKER_REGISTRY-}catalogapi
     build:
       context: src/Services/Catalog/Catalog.API
       dockerfile: Dockerfile
+    depends_on:
+      catalogdb:
+        condition: service_healthy
+
+  # Remove if you don't have Basket.API yet
+  basket.api:
+    image: ${DOCKER_REGISTRY-}basketapi
+    build:
+      context: src/Services/Basket/Basket.API
+      dockerfile: Dockerfile
+    depends_on:
+      basketdb:
+        condition: service_healthy
 
 volumes:
   postgres_catalog:
-
+  postgres_basket:

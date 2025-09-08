@@ -1,25 +1,39 @@
+version: "3.9"
+
 services:
- catalogdb:
-  container_name: catalogdb
-  environment:
-   - POSTGRES_USER=postgres
-   - POSTGRES_PASSWORD=postgres
-   - POSTGRES_DB=CatalogDb
-  restart: always
-  ports:
-   - "5432:5432"
-  volumes:
-   - postgres_catalog:/var/lib/postgresql/data/
-   
-   
- catalog.api:
+  catalogdb:
+    container_name: catalogdb
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=CatalogDb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_catalog:/var/lib/postgresql/data
+
+  basketdb:
+    container_name: basketdb
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=BasketDb
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_basket:/var/lib/postgresql/data
+
+  catalog.api:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - ASPNETCORE_HTTPS_PORTS=8081
-      - ConnectionStrings__Database=Server=catalogdb;port=5432;Database=CatalogDb;User Id=postgres;Password=postgres;Include Error Detail=true
+      - ConnectionStrings__Database=Server=catalogdb;Port=5432;Database=CatalogDb;User Id=postgres;Password=postgres;Include Error Detail=true
     depends_on:
-      - catalogdb
+      catalogdb:
+        condition: service_healthy
     ports:
       - "6000:8080"
       - "6060:8081"
@@ -27,4 +41,25 @@ services:
       - ./secrets/UserSecrets:/home/app/.microsoft/usersecrets:ro
       - ./secrets/UserSecrets:/root/.microsoft/usersecrets:ro
       - ./secrets/https:/home/app/.aspnet/https:ro
-      - ./secrets/https:/root/.aspnet/https:ro- 
+      - ./secrets/https:/root/.aspnet/https:ro
+  basket.api:
+    image: ${DOCKER_REGISTRY-}basketapi
+    build:
+      context: src/Services/Basket/Basket.API
+      dockerfile: Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+      - ConnectionStrings__Database=Server=basketdb;Port=5432;Database=BasketDb;User Id=postgres;Password=postgres;Include Error Detail=true
+    depends_on:
+      basketdb:
+        condition: service_healthy
+    ports:
+      - "7000:8080"
+      - "7060:8081"
+    volumes:
+      - ./secrets/UserSecrets:/home/app/.microsoft/usersecrets:ro
+      - ./secrets/UserSecrets:/root/.microsoft/usersecrets:ro
+      - ./secrets/https:/home/app/.aspnet/https:ro
+      - ./secrets/https:/root/.aspnet/https:ro
