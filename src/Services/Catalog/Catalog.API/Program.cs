@@ -25,7 +25,7 @@ builder.Services.AddValidatorsFromAssembly(assembly);
 builder.Services.AddCarter();
 builder.Services.AddMarten(opts =>
 {
-    opts.Connection("Host=127.0.0.1;Port=5432;Database=catalogdb;Username=postgres;Password=postgres;");
+    opts.Connection("Host=127.0.0.1;Port=5432;Database=CatalogDb;Username=postgres;Password=postgres;");
 }).UseLightweightSessions();
 
 if (builder.Environment.IsDevelopment())
